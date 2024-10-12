@@ -1,3 +1,19 @@
+#game-container {
+    display: flex;             /* Side-by-side layout */
+    align-items: flex-start;   /* Align top of the div and canvas */
+}
+
+#plant-selection {
+    width: 100px;              /* First column width */
+    height: 500px;             /* Same height as canvas */
+    background-color: lightgreen;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    padding: 10px;
+}
+
+
 body{
     background: black;
 }
@@ -9,10 +25,4 @@ body{
     width: 900px;
     height: 600px;
     background: white ;
-}
-h1{
-    color: white;
-    text-align: center;
-    font-size: 50px;
-    margin-top: 50px;
 }
