@@ -112,13 +112,7 @@ class Plant {
         this.health = 100;
         this.timer = 0;
     }
-    draw(){
-        ctx.fillStyle = 'green';
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.fillStyle = 'gold';
-        ctx.font = '20px Arial';
-        ctx.fillText(Math.floor(this.health), this.x + 15, this.y + 30);
-    }
+   
 }
 //images of plant
 
@@ -192,7 +186,7 @@ class chilly extends Plant {
         plants.splice(plants.indexOf(this), 1);
     }
 }
-//sunflower
+//wall nut
 class wall_nut extends Plant {
     constructor(x, y){
         super(x, y);
@@ -257,16 +251,7 @@ class Zombie {
     update(){
         this.x -= this.movement;
     }
-    draw(){
-        ctx.fillStyle = 'darkgrey';
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.fillStyle = 'white';
-        ctx.font = '20px Arial';
-        ctx.fillText('Z', this.x + 15, this.y + 30);
-        ctx.fillStyle = 'red';
-        ctx.font = '20px Arial';
-        ctx.fillText(Math.floor(this.health), this.x + 15, this.y + 60);
-    }
+   
 }
 
 //zombies images
@@ -465,7 +450,9 @@ function drawPlantSelectionMenu() {
         if (img) {
             ctx.drawImage(img, 10, cellSize * (i + 1) + 5, 40, 40);  
         }
-
+        ctx.font = '30px Arial';
+        ctx.fillStyle = 'black'; 
+       ctx.fillText(plantTypes[i].cost,cellSize/2,cellSize*(i+1.5),canvas.width);
     }
 }
 
@@ -503,12 +490,75 @@ canvas.addEventListener('click', function(e) {
     }
 });
 
+const replayButton = {
+    x: canvas.width / 2 - 100,
+    y: canvas.height / 2,
+    width: 200,
+    height: 50,
+    text: 'Replay',
+};
+
+function resetGame() {
+    gameOver = false;
+    score = 0;
+    sunEnergy = 300;
+    zombies.length = 0;  
+    plants.length = 0;  
+    peas.length = 0;  
+    suns.length = 0; 
+    zombiePositions.length = 0;  
+    frame = 0;
+    startTime = Date.now(); 
+    finalWaveStarted = false;
+    zombiesInterval = 600; 
+    animate();
+}
+
+// Game Over overlay with blur effect
+function drawGameOverOverlay() {
+    ctx.save();
+    ctx.filter = 'blur(5px)';
+    handleGameGrid();
+    handlePlants();
+    handleSuns();
+    handlePeas();
+    handleZombies();
+    ctx.restore();
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = 'white';
+    ctx.font = '90px Arial';
+    ctx.fillText('GAME OVER', canvas.width / 2 - 250, canvas.height / 2 - 100);
+
+    ctx.fillStyle = 'lightgreen';
+    ctx.fillRect(replayButton.x, replayButton.y, replayButton.width, replayButton.height);
+    ctx.fillStyle = 'black';
+    ctx.font = '40px Arial';
+    ctx.fillText(replayButton.text, replayButton.x + 30, replayButton.y + 40);
+}
+
+canvas.addEventListener('click', function(e) {
+    const mouseX = e.x - canvasPosition.left;
+    const mouseY = e.y - canvasPosition.top;
+
+    if (gameOver && mouseX > replayButton.x && mouseY > replayButton.y && mouseX < replayButton.x + replayButton.width && mouseY < replayButton.y + replayButton.height) {
+        resetGame();  
+    }
+});
+
+
 // utilities
 function handleGameStatus(){
-    ctx.fillStyle = 'gold';
+    ctx.fillStyle = 'rgba(69, 52, 43, 0.7)';  
+    ctx.fillRect(10, 10, 150, 50);  
+
+    ctx.drawImage(sunImage, 15, 15, 50, 50);  
+
     ctx.font = '30px Arial';
-    ctx.fillText('Sun Energy: ' + sunEnergy, 20, 40);
-    ctx.fillText('Score: ' + score, 20, 80);
+    ctx.fillStyle = 'black';  
+    ctx.fillText('  :' + sunEnergy, 50, 50); 
     
     const currentTime = Date.now() - startTime;
     const timeLeft = Math.max(0, gameTime - currentTime);
@@ -523,11 +573,9 @@ function handleGameStatus(){
       finalWaveMessageTimer--;
   }
 
-    if (gameOver){
-        ctx.fillStyle = 'black';
-        ctx.font = '90px Arial';
-        ctx.fillText('GAME OVER', 135, 330);
-    }
+if(gameOver) {
+    drawGameOverOverlay();
+}
     if (currentTime >= gameTime && !gameOver){
       ctx.fillStyle = 'black';
       ctx.font = '60px Arial';
@@ -540,11 +588,13 @@ function handleGameStatus(){
 
 function animate(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    handleGameGrid();
-    handlePlants();
-    handleSuns();
-    handlePeas();
-    handleZombies();
+    if (!gameOver) {
+        handleGameGrid();
+        handlePlants();
+        handleSuns();
+        handlePeas();
+        handleZombies();
+    }
     handleGameStatus();
     drawPlantSelectionMenu();
     frame++;

@@ -3,17 +3,6 @@
     align-items: flex-start;   /* Align top of the div and canvas */
 }
 
-#plant-selection {
-    width: 100px;              /* First column width */
-    height: 500px;             /* Same height as canvas */
-    background-color: lightgreen;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    padding: 10px;
-}
-
-
 body{
     background: black;
 }
@@ -29,4 +18,11 @@ background-repeat: no-repeat;
 background-size: cover;
 background-position: center;
 
+}
+#restart, #home{
+    height: 60px;
+    width: 110px;
+    color:black;
+    font-size: x-large;
+    background-image: url('p-images/stone.png');
 }
