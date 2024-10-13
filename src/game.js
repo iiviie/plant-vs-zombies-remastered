@@ -13,7 +13,7 @@ let frame = 0;
 let gameOver = false;
 let score = 0;
 const winningScore = 100;
-const gameTime = 4 * 60 * 1000; // 4 minutes in milliseconds
+const gameTime = 2 * 60 * 1000; // 2 minutes in milliseconds
 let startTime;
 
 const gameGrid = [];
@@ -25,11 +25,26 @@ const suns = [];
 
 // plant selection
 const plantTypes = [
-    { name: 'Peashooter', cost: 100 },
-    { name: 'Sunflower', cost: 50 }
+    { name: 'Peashooter', cost: 100, imageSrc: 'p-images/peashooter.webp' },
+    { name: 'Sunflower', cost: 50, imageSrc: 'p-images/sunflower.png' },
+    { name: 'wall_nut', cost: 50, imageSrc: 'p-images/wall_nut.png' },
+    { name: 'chilly', cost: 150, imageSrc: 'p-images/chilly-fire.png' },
 ];
+
+for (let i = 0; i < plantTypes.length; i++) {
+    let img = new Image();
+    img.src = plantTypes[i].imageSrc;
+    plantTypes[i].image = img;  
+}
+
 let selectedPlant = 0;
 
+//zombies selection
+const zombieTypes = [
+    { name: 'nzombie', level: 1},
+    { name: 'cone_zombie', level :2 },
+    { name: 'bucket_zombie', level :3 }
+];
 // mouse
 const mouse = {
     x: 10,
@@ -102,17 +117,29 @@ class Plant {
         ctx.fillText(Math.floor(this.health), this.x + 15, this.y + 30);
     }
 }
+//images of plant
 
+const peashooterImage = new Image();
+peashooterImage.src = 'p-images/peashooter.webp';
+
+const sunflowerImage = new Image();
+sunflowerImage.src = 'p-images/sunflower.png';
+
+const chillyImage = new Image();
+chillyImage.src = 'p-images/chilly-fire.png';
+
+const wallImage = new Image();
+wallImage.src = 'p-images/wall_nut.png';
+
+
+//peashooter
 class Peashooter extends Plant {
     constructor(x, y){
         super(x, y);
         this.cost = 100;
     }
     draw(){
-        super.draw();
-        ctx.fillStyle = 'darkgreen';
-        ctx.font = '20px Arial';
-        ctx.fillText('PS', this.x + 15, this.y + 60);
+        ctx.drawImage(peashooterImage, this.x, this.y, this.width, this.height);
     }
     update(){
         if (this.shooting){
@@ -125,7 +152,7 @@ class Peashooter extends Plant {
         }
     }
 }
-
+//sunflower
 class Sunflower extends Plant {
     constructor(x, y){
         super(x, y);
@@ -133,10 +160,7 @@ class Sunflower extends Plant {
         this.sunTimer = 0;
     }
     draw(){
-        super.draw();
-        ctx.fillStyle = 'yellow';
-        ctx.font = '20px Arial';
-        ctx.fillText('SF', this.x + 15, this.y + 60);
+        ctx.drawImage(sunflowerImage, this.x, this.y, this.width, this.height);
     }
     update(){
         this.sunTimer++;
@@ -145,6 +169,45 @@ class Sunflower extends Plant {
         }
     }
 }
+//chilly
+class chilly extends Plant {
+    constructor(x, y) {
+        super(x, y);
+        this.cost = 150; 
+    }
+    draw(){
+        ctx.drawImage(chillyImage, this.x, this.y, this.width, this.height);
+    }
+    update() {
+        for (let i = zombies.length - 1; i >= 0; i--) {
+            if (zombies[i].y === this.y) {
+                const findThisIndex = zombiePositions.indexOf(zombies[i].y);
+                zombiePositions.splice(findThisIndex, 1); 
+                zombies.splice(i, 1); 
+            }
+        }
+        plants.splice(plants.indexOf(this), 1);
+    }
+}
+//sunflower
+class wall_nut extends Plant {
+    constructor(x, y){
+        super(x, y);
+        this.cost = 50;
+        this.health= 500;
+    }
+    draw(){
+        ctx.drawImage(wallImage, this.x, this.y, this.width, this.height);
+    }
+    update(){
+        if (this.health <= 0) {
+            const index = plants.indexOf(this);
+            if (index > -1) {
+                plants.splice(index, 1); 
+            }
+        }
+    }
+    }
 
 function handlePlants(){
     for (let i = 0; i < plants.length; i++){
@@ -185,6 +248,7 @@ class Zombie {
         this.movement = this.speed;
         this.health = 100;
         this.maxHealth = this.health;
+        
     }
     update(){
         this.x -= this.movement;
@@ -200,6 +264,53 @@ class Zombie {
         ctx.fillText(Math.floor(this.health), this.x + 15, this.y + 60);
     }
 }
+
+//zombies images
+const nzombieImage = new Image();
+nzombieImage.src = 'z-images/Zombie.png';
+
+const cone_zombieImage = new Image();
+cone_zombieImage.src = 'z-images/conehead_zombie.png';
+
+const bucket_zombieImage = new Image();
+bucket_zombieImage.src = 'z-images/buckethead_zombie.png';
+
+//normal zombie
+class nzombie extends Zombie {
+    constructor(x, y){
+        super(x, y);
+        this.level =1;
+    }
+    draw(){
+        ctx.drawImage(nzombieImage, this.x, this.y, this.width, this.height);
+    }
+    
+}
+
+//cone head zombie
+class cone_zombie extends Zombie {
+    constructor(x, y){
+        super(x, y);
+        this.level =2;
+    }
+    draw(){
+        ctx.drawImage(cone_zombieImage, this.x, this.y, this.width, this.height);
+    }
+    
+}
+
+//buckethead zombie
+class bucket_zombie extends Zombie {
+    constructor(x, y){
+        super(x, y);
+        this.level =3;
+    }
+    draw(){
+        ctx.drawImage(bucket_zombieImage, this.x, this.y, this.width, this.height);
+    }
+    
+}
+
 function handleZombies(){
     for (let i = 0; i < zombies.length; i++){
         zombies[i].update();
@@ -219,7 +330,19 @@ function handleZombies(){
     }
     if (frame % zombiesInterval === 0 && score < winningScore){
         let verticalPosition = Math.floor(Math.random() * 5 + 1) * cellSize + cellGap;
-        zombies.push(new Zombie(verticalPosition));
+
+  // Randomly choose to spawn zombies
+  let zombieType = Math.random();
+  if (zombieType < 0.5) {  
+      zombies.push(new nzombie(verticalPosition));
+  } 
+  else if(zombieType<0.8 && zombieType>=0.5) {  
+      zombies.push(new cone_zombie(verticalPosition));
+  }
+  else {  
+    zombies.push(new bucket_zombie(verticalPosition));
+}
+        
         zombiePositions.push(verticalPosition);
         if (zombiesInterval > 120) zombiesInterval -= 50;
     }
@@ -241,7 +364,7 @@ class Pea {
     draw(){
         ctx.fillStyle = 'limegreen';
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.width / 2, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, this.width , 0, Math.PI * 2);
         ctx.fill();
     }
 }
@@ -267,6 +390,9 @@ function handlePeas(){
 
 // suns
 //FIXME:the suns currletly fall from the top of the screen and do not stay on the lawn/field
+const sunImage = new Image();
+sunImage.src = 'p-images/Sun.gif';
+
 class Sun {
     constructor(x, y){
         this.x = x || Math.random() * (canvas.width - cellSize);
@@ -280,10 +406,7 @@ class Sun {
         this.y += this.speed;
     }
     draw(){
-        ctx.fillStyle = 'yellow';
-        ctx.beginPath();
-        ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.drawImage(sunImage, this.x, this.y, this.width, this.height);
     }
 }
 
@@ -313,8 +436,13 @@ function drawPlantSelectionMenu() {
     
     for (let i = 0; i < plantTypes.length; i++) {
         ctx.fillStyle = i === selectedPlant ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)';
-        ctx.fillRect(0, cellSize * (i + 1), cellSize, cellSize);
+        ctx.fillRect(0, cellSize * (i + 1), cellSize, cellSize/2);
         
+        const img = plantTypes[i].image;
+        if (img) {
+            ctx.drawImage(img, 10, cellSize * (i + 1) + 5, 40, 40);  
+        }
+
         ctx.fillStyle = 'black';
         ctx.font = '20px Arial';
         ctx.fillText(plantTypes[i].name, 10, cellSize * (i + 1) + 30);
@@ -347,6 +475,10 @@ canvas.addEventListener('click', function(e) {
             plants.push(new Peashooter(gridPositionX, gridPositionY));
         } else if (plantTypes[selectedPlant].name === 'Sunflower'){
             plants.push(new Sunflower(gridPositionX, gridPositionY));
+        } else if (plantTypes[selectedPlant].name === 'chilly') {
+            plants.push(new chilly(gridPositionX, gridPositionY)); 
+        }else if (plantTypes[selectedPlant].name === 'wall_nut') {
+            plants.push(new wall_nut(gridPositionX, gridPositionY)); 
         }
         sunEnergy -= plantCost;
     }
@@ -381,8 +513,6 @@ function handleGameStatus(){
 
 function animate(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'blue';
-    ctx.fillRect(0,0,controlsBar.width, controlsBar.height);
     handleGameGrid();
     handlePlants();
     handleSuns();
