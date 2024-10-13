@@ -7,14 +7,17 @@ canvas.height = 600;
 const cellSize = 100;
 const cellGap = 3;
 let sunEnergy = 300;
-const sunValue = 25;
+const sunValue = 50;
 let zombiesInterval = 600;
 let frame = 0;
 let gameOver = false;
 let score = 0;
-const winningScore = 100;
-const gameTime = 2 * 60 * 1000; // 2 minutes in milliseconds
+
+const gameTime = 2 * 60 * 1000;
 let startTime;
+let finalWaveStarted = false;
+let finalWaveMessageTimer = 0;
+
 
 const gameGrid = [];
 const plants = [];
@@ -97,7 +100,7 @@ function handleGameGrid(){
 
 // plants
 
-//TODO: add sprites for plants
+//TODO: add animated sprites for plants
 //TODO: add more plant types
 class Plant {
     constructor(x, y){
@@ -164,7 +167,7 @@ class Sunflower extends Plant {
     }
     update(){
         this.sunTimer++;
-        if (this.sunTimer % 300 === 0){
+        if (this.sunTimer % 700 === 0){
             suns.push(new Sun(this.x + this.width / 2, this.y));
         }
     }
@@ -194,7 +197,7 @@ class wall_nut extends Plant {
     constructor(x, y){
         super(x, y);
         this.cost = 50;
-        this.health= 500;
+        this.health= 2000;
     }
     draw(){
         ctx.drawImage(wallImage, this.x, this.y, this.width, this.height);
@@ -244,10 +247,11 @@ class Zombie {
         this.y = verticalPosition;
         this.width = cellSize - cellGap * 2;
         this.height = cellSize - cellGap * 2;
-        this.speed = Math.random() * 0.2 + 0.4;
+        this.speed = 0.44;
         this.movement = this.speed;
         this.health = 100;
         this.maxHealth = this.health;
+        this.damage = 5; 
         
     }
     update(){
@@ -292,6 +296,8 @@ class cone_zombie extends Zombie {
     constructor(x, y){
         super(x, y);
         this.level =2;
+        this.health = 150;
+        this.maxHealth = this.health;
     }
     draw(){
         ctx.drawImage(cone_zombieImage, this.x, this.y, this.width, this.height);
@@ -304,6 +310,8 @@ class bucket_zombie extends Zombie {
     constructor(x, y){
         super(x, y);
         this.level =3;
+        this.health = 200;
+        this.maxHealth = this.health;
     }
     draw(){
         ctx.drawImage(bucket_zombieImage, this.x, this.y, this.width, this.height);
@@ -311,27 +319,39 @@ class bucket_zombie extends Zombie {
     
 }
 
+
 function handleZombies(){
-    for (let i = 0; i < zombies.length; i++){
-        zombies[i].update();
-        zombies[i].draw();
-        if (zombies[i].x < 0){
-            gameOver = true;
-        }
-        if (zombies[i].health <= 0){
-            let gainedSuns = zombies[i].maxHealth / 10;
-            sunEnergy += gainedSuns;
-            score += gainedSuns;
-            const findThisIndex = zombiePositions.indexOf(zombies[i].y);
-            zombiePositions.splice(findThisIndex, 1);
-            zombies.splice(i, 1);
-            i--;
-        }
-    }
-    if (frame % zombiesInterval === 0 && score < winningScore){
-        let verticalPosition = Math.floor(Math.random() * 5 + 1) * cellSize + cellGap;
+  const currentTime = Date.now() - startTime;
+  const finalWaveTime = 90 * 1000; // 1 minute 30 seconds
+
+  if (currentTime >= finalWaveTime && !finalWaveStarted) {
+      finalWaveStarted = true;
+      zombiesInterval = 200; // Increase spawn rate for final wave
+      finalWaveMessageTimer = 180; // Show message for 3 seconds (60 frames per second)
+  }
+
+  for (let i = 0; i < zombies.length; i++){
+      zombies[i].update();
+      zombies[i].draw();
+      if (zombies[i].x < 0){
+          gameOver = true;
+      }
+      if (zombies[i].health <= 0){
+          let gainedSuns = zombies[i].maxHealth / 10;
+          sunEnergy += gainedSuns;
+          score += gainedSuns;
+          const findThisIndex = zombiePositions.indexOf(zombies[i].y);
+          zombiePositions.splice(findThisIndex, 1);
+          zombies.splice(i, 1);
+          i--;
+      }
+  }
+
+  if (frame % zombiesInterval === 0){
+      let verticalPosition = Math.floor(Math.random() * 5 + 1) * cellSize + cellGap;
 
   // Randomly choose to spawn zombies
+  //FIXME: reduce the probability of the bucket zombies
   let zombieType = Math.random();
   if (zombieType < 0.5) {  
       zombies.push(new nzombie(verticalPosition));
@@ -344,8 +364,8 @@ function handleZombies(){
 }
         
         zombiePositions.push(verticalPosition);
-        if (zombiesInterval > 120) zombiesInterval -= 50;
-    }
+
+      }
 }
 
 // peas
@@ -393,6 +413,7 @@ function handlePeas(){
 const sunImage = new Image();
 sunImage.src = 'p-images/Sun.gif';
 
+//fixed the issue of sunds fall off the screen , now they stopa at the bottom of the screen
 class Sun {
     constructor(x, y){
         this.x = x || Math.random() * (canvas.width - cellSize);
@@ -400,10 +421,15 @@ class Sun {
         this.width = cellSize * 0.6;
         this.height = cellSize * 0.6;
         this.amount = sunValue;
-        this.speed = Math.random() * 1 + 0.5;
+        this.speed = Math.random() * 0.5 + 0.25;
+        this.bottomY = canvas.height - this.height;
     }
     update(){
+      if (this.y < this.bottomY) {
         this.y += this.speed;
+    } else {
+        this.y = this.bottomY; // Ensure sun stops exactly at the bottom
+    }
     }
     draw(){
         ctx.drawImage(sunImage, this.x, this.y, this.width, this.height);
@@ -411,7 +437,7 @@ class Sun {
 }
 
 function handleSuns(){
-    if (frame % 100 === 0 && Math.random() < 0.3){
+    if (frame % 200 === 0 && Math.random() < 0.3){
         suns.push(new Sun());
     }
     for (let i = 0; i < suns.length; i++){
@@ -422,10 +448,7 @@ function handleSuns(){
             suns.splice(i, 1);
             i--;
         }
-        if (suns[i] && suns[i].y > canvas.height){
-            suns.splice(i, 1);
-            i--;
-        }
+        
     }
 }
 
@@ -443,10 +466,6 @@ function drawPlantSelectionMenu() {
             ctx.drawImage(img, 10, cellSize * (i + 1) + 5, 40, 40);  
         }
 
-        ctx.fillStyle = 'black';
-        ctx.font = '20px Arial';
-        ctx.fillText(plantTypes[i].name, 10, cellSize * (i + 1) + 30);
-        ctx.fillText(plantTypes[i].cost, 10, cellSize * (i + 1) + 60);
     }
 }
 
@@ -497,18 +516,26 @@ function handleGameStatus(){
     const seconds = Math.floor((timeLeft % 60000) / 1000);
     ctx.fillText(`Time: ${minutes}:${seconds.toString().padStart(2, '0')}`, canvas.width - 200, 40);
 
+    if (finalWaveMessageTimer > 0) {
+      ctx.fillStyle = 'red';
+      ctx.font = '40px Arial';
+      ctx.fillText('Final Wave! More zombies incoming!', canvas.width / 2 - 250, canvas.height / 2);
+      finalWaveMessageTimer--;
+  }
+
     if (gameOver){
         ctx.fillStyle = 'black';
         ctx.font = '90px Arial';
         ctx.fillText('GAME OVER', 135, 330);
     }
-    if (score >= winningScore && zombies.length === 0){
-        ctx.fillStyle = 'black';
-        ctx.font = '60px Arial';
-        ctx.fillText('LEVEL COMPLETE', 130, 300);
-        ctx.font = '30px Arial';
-        ctx.fillText('You win with ' + score + ' points!', 134, 340);
-    }
+    if (currentTime >= gameTime && !gameOver){
+      ctx.fillStyle = 'black';
+      ctx.font = '60px Arial';
+      ctx.fillText('YOU WIN!', 130, 300);
+      ctx.font = '30px Arial';
+      ctx.fillText('You survived with ' + score + ' points!', 134, 340);
+      gameOver = true;
+  }
 }
 
 function animate(){
@@ -522,9 +549,7 @@ function animate(){
     drawPlantSelectionMenu();
     frame++;
     
-    if (Date.now() - startTime > gameTime) {
-        gameOver = true;
-    }
+
     
     if (!gameOver) requestAnimationFrame(animate);
 }
