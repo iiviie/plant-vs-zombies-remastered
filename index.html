@@ -3,14 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="src/style.css">
+    <title>home_page</title>
+    <link rel="stylesheet" href="src/home.css">
+    <link rel="icon" href="../p-images/peashooter.webp">
 </head>
 <body>
-    <div id="game-container">
-        <div id="plant-selection"></div>
-        <canvas id="canvas1"></canvas>
+
+<div id="loading-screen">
+    <div class="loading-bar">
+        <div class="progress"></div>
     </div>
-    <script src="src/game.js"></script>
+</div>
+
+<div id="home-page" style="display: none;">
+
+    <button id="name-button">name</button>
+
+    <a href="src/adven.html" target="_self" >
+        <button id="adventure-button" >adventure</button></a>
+  
+    <button id="more-ways-button">More-ways</button>
+
+    <button id="help">Help</button>
+
+</div>
+
+<script src="src/home.js"></script>
+
 </body>
 </html>
