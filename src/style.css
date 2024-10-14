@@ -1,0 +1,28 @@
+#game-container {
+    display: flex;             /* Side-by-side layout */
+    align-items: flex-start;   /* Align top of the div and canvas */
+}
+
+body{
+    background: black;
+}
+#canvas1{
+    position: absolute;
+    top:50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 900px;
+    height: 600px;
+background-image: url('p-images/background.jpg');
+background-repeat: no-repeat;
+background-size: cover;
+background-position: center;
+
+}
+#restart, #home{
+    height: 60px;
+    width: 110px;
+    color:black;
+    font-size: x-large;
+    background-image: url('p-images/stone.png');
+}
