@@ -12,6 +12,7 @@ let zombiesInterval = 600;
 let frame = 0;
 let gameOver = false;
 let score = 0;
+let currentlevel = 1;
 
 const gameTime = 2 * 60 * 1000;
 let startTime;
@@ -498,6 +499,14 @@ const replayButton = {
     text: 'Replay',
 };
 
+//for level increase
+const playButton = {
+    x: canvas.width / 2 - 100,
+    y: canvas.height / 2 + 60,
+    width: 300,
+    height: 50,
+};
+
 function resetGame() {
     gameOver = false;
     score = 0;
@@ -510,7 +519,7 @@ function resetGame() {
     frame = 0;
     startTime = Date.now(); 
     finalWaveStarted = false;
-    zombiesInterval = 600; 
+    zombiesInterval = Math.max(100, zombiesInterval - (currentlevel-1) * 100);; 
     animate();
 }
 
@@ -539,12 +548,40 @@ function drawGameOverOverlay() {
     ctx.fillText(replayButton.text, replayButton.x + 30, replayButton.y + 40);
 }
 
+//level increased display
+function drawLevelUpOverlay() {
+    ctx.save();
+    ctx.filter = 'blur(5px)';
+    handleGameGrid();
+    handlePlants();
+    handleSuns();
+    handlePeas();
+    handleZombies();
+    ctx.restore();
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = 'white';
+    ctx.font = '90px Arial';
+    ctx.fillText('LEVEL ' + (currentlevel), canvas.width / 2 - 230, canvas.height / 2 - 100);
+
+    ctx.fillStyle = 'lightgreen';
+    ctx.fillRect(playButton.x, playButton.y, playButton.width, playButton.height);
+    ctx.fillStyle = 'black';
+    ctx.font = '40px Arial';
+    ctx.fillText('Play level ' + (currentlevel), playButton.x + 20, playButton.y + 40);
+}
+
 canvas.addEventListener('click', function(e) {
     const mouseX = e.x - canvasPosition.left;
     const mouseY = e.y - canvasPosition.top;
 
     if (gameOver && mouseX > replayButton.x && mouseY > replayButton.y && mouseX < replayButton.x + replayButton.width && mouseY < replayButton.y + replayButton.height) {
         resetGame();  
+    }
+    else if (gameOver  && mouseX > playButton.x && mouseY > playButton.y && mouseX < playButton.x + playButton.width && mouseY < playButton.y + playButton.height) {
+        resetGame(); 
     }
 });
 
@@ -577,14 +614,12 @@ if(gameOver) {
     drawGameOverOverlay();
 }
     if (currentTime >= gameTime && !gameOver){
-      ctx.fillStyle = 'black';
-      ctx.font = '60px Arial';
-      ctx.fillText('YOU WIN!', 130, 300);
-      ctx.font = '30px Arial';
-      ctx.fillText('You survived with ' + score + ' points!', 134, 340);
+     currentlevel++;
       gameOver = true;
+      drawLevelUpOverlay();
   }
-}
+
+ }
 
 function animate(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
