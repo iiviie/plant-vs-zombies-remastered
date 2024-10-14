@@ -3,6 +3,15 @@ const ctx = canvas.getContext('2d');
 canvas.width = 900;
 canvas.height = 600;
 
+const backgroundMusic = new Audio('music/pvzMusic.mp3');
+backgroundMusic.loop = true;
+
+function startBackgroundMusic() {
+    backgroundMusic.play();
+}
+
+
+
 // global variables
 const cellSize = 100;
 const cellGap = 3;
@@ -653,5 +662,7 @@ window.addEventListener('resize', function(){
     canvasPosition = canvas.getBoundingClientRect();
 });
 
+
+startBackgroundMusic();
 startTime = Date.now();
 animate();
