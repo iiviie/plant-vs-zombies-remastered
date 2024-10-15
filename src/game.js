@@ -282,7 +282,7 @@ class Zombie {
         this.y = verticalPosition;
         this.width = cellSize - cellGap * 2;
         this.height = cellSize - cellGap * 2;
-        this.speed = 0.44;
+        this.speed = 0.2;
         this.movement = this.speed;
         this.health = 100;
         this.maxHealth = this.health;
