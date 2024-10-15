@@ -477,12 +477,16 @@ class Sun {
         this.amount = sunValue;
         this.speed = Math.random() * 0.5 + 0.25;
         this.bottomY = canvas.height - this.height;
+        this.bottomHitTime = null;
     }
     update(){
       if (this.y < this.bottomY) {
         this.y += this.speed;
     } else {
-        this.y = this.bottomY; // Ensure trhatsun stops exactly at the bottom
+        this.y = this.bottomY;   // Ensure trhatsun stops exactly at the bottom
+        if(this.bottomHitTime === null) {
+        this.bottomHitTime = Date.now();
+        }
     }
     }
     draw(){
@@ -499,6 +503,9 @@ function handleSuns(){
         suns[i].draw();
         if (suns[i] && mouse.x && mouse.y && collision(suns[i], mouse)){
             sunEnergy += suns[i].amount;
+            suns.splice(i, 1);
+            i--;
+        } else if (suns[i].bottomHitTime && Date.now() - suns[i].bottomHitTime > 3000){
             suns.splice(i, 1);
             i--;
         }
