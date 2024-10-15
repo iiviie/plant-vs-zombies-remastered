@@ -227,17 +227,6 @@ function handlePlants(){
                 plants[i].shooting = false;
             }
         }
-        for (let j = 0; j < zombies.length; j++){
-            if (plants[i] && collision(plants[i], zombies[j])){
-                zombies[j].movement = 0;
-                plants[i].health -= 0.5;
-            }
-            if (plants[i] && plants[i].health <= 0){
-                plants.splice(i, 1);
-                i--;
-                zombies[j].movement = zombies[j].speed;
-            }
-        }
     }
 }
 
@@ -255,7 +244,8 @@ class Zombie {
         this.movement = this.speed;
         this.health = 100;
         this.maxHealth = this.health;
-        this.damage = 5; 
+        this.damage = 5;
+        this.eating = false;
         
     }
     update(){
@@ -316,52 +306,76 @@ class bucket_zombie extends Zombie {
 
 
 function handleZombies(){
-  const currentTime = Date.now() - startTime;
-  const finalWaveTime = 90 * 1000; // 1 minute 30 seconds
+    const currentTime = Date.now() - startTime;
+    const finalWaveTime = 90 * 1000; // 1 minute 30 seconds
 
-  if (currentTime >= finalWaveTime && !finalWaveStarted) {
-      finalWaveStarted = true;
-      zombiesInterval = 200; // Increase spawn rate for final wave
-      finalWaveMessageTimer = 180; // Show message for 3 seconds (60 frames per second)
-  }
+    if (currentTime >= finalWaveTime && !finalWaveStarted) {
+        finalWaveStarted = true;
+        zombiesInterval = 200; // Increase spawn rate for final wave
+        finalWaveMessageTimer = 180; // Show message for 3 seconds (60 frames per second)
+    }
 
-  for (let i = 0; i < zombies.length; i++){
-      zombies[i].update();
-      zombies[i].draw();
-      if (zombies[i].x < 0){
-          gameOver = true;
-      }
-      if (zombies[i].health <= 0){
-          let gainedSuns = zombies[i].maxHealth / 10;
-          sunEnergy += gainedSuns;
-          score += gainedSuns;
-          const findThisIndex = zombiePositions.indexOf(zombies[i].y);
-          zombiePositions.splice(findThisIndex, 1);
-          zombies.splice(i, 1);
-          i--;
-      }
-  }
+    for (let i = 0; i < zombies.length; i++){
+        zombies[i].update();
+        zombies[i].draw();
 
-  if (frame % zombiesInterval === 0){
-      let verticalPosition = Math.floor(Math.random() * 5 + 1) * cellSize + cellGap;
+        let collidingWithPlant = false;
 
-  // Randomly choose to spawn zombies
-  //FIXME: reduce the probability of the bucket zombies
-  let zombieType = Math.random();
-  if (zombieType < 0.5) {  
-      zombies.push(new nzombie(verticalPosition));
-  } 
-  else if(zombieType<0.8 && zombieType>=0.5) {  
-      zombies.push(new cone_zombie(verticalPosition));
-  }
-  else {  
-    zombies.push(new bucket_zombie(verticalPosition));
-}
+        for (let j = 0; j < plants.length; j++) {
+            if (plantZombieCollision(plants[j], zombies[i])) {
+                collidingWithPlant = true;
+                zombies[i].eating = true;
+                zombies[i].movement = 0;
+                plants[j].health -= zombies[i].damage / 60; // Assuming 60 FPS, adjust damage per frame
+
+                if (plants[j].health <= 0) {
+                    plants.splice(j, 1);
+                    j--;
+                    zombies[i].eating = false;
+                    zombies[i].movement = zombies[i].speed;
+                }
+                break;
+            }
+        }
+
+        if (!collidingWithPlant && zombies[i].eating) {
+            zombies[i].eating = false;
+            zombies[i].movement = zombies[i].speed;
+        }
+
+        if (zombies[i].x < 0){
+            gameOver = true;
+        }
+        if (zombies[i].health <= 0){
+            let gainedSuns = zombies[i].maxHealth / 10;
+            sunEnergy += gainedSuns;
+            score += gainedSuns;
+            const findThisIndex = zombiePositions.indexOf(zombies[i].y);
+            zombiePositions.splice(findThisIndex, 1);
+            zombies.splice(i, 1);
+            i--;
+        }
+    }
+
+    if (frame % zombiesInterval === 0){
+        let verticalPosition = Math.floor(Math.random() * 5 + 1) * cellSize + cellGap;
+
+        // Randomly choose to spawn zombies
+        let zombieType = Math.random();
+        if (zombieType < 0.5) {  
+            zombies.push(new nzombie(verticalPosition));
+        } 
+        else if(zombieType < 0.8 && zombieType >= 0.5) {  
+            zombies.push(new cone_zombie(verticalPosition));
+        }
+        else {  
+            zombies.push(new bucket_zombie(verticalPosition));
+        }
         
         zombiePositions.push(verticalPosition);
-
-      }
+    }
 }
+
 
 // peas
 class Pea {
@@ -453,7 +467,7 @@ function drawPlantSelectionMenu() {
     ctx.fillRect(0, 0, cellSize, canvas.height);
     
     for (let i = 0; i < plantTypes.length; i++) {
-        ctx.fillStyle = i === selectedPlant ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)';
+        ctx.fillStyle = i === selectedPlant ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 255, 255, 1)';
         ctx.fillRect(0, cellSize * (i + 1), cellSize, cellSize/2);
         
         const img = plantTypes[i].image;
@@ -657,6 +671,16 @@ function collision(first, second){
         return true;
     };
 };
+
+function plantZombieCollision(plant, zombie) {
+    const collisionThreshold = 0; // Collision up to 50px on the right of the cell
+    return (
+        plant.y === zombie.y &&
+        zombie.x <= plant.x + plant.width + collisionThreshold &&
+        zombie.x + zombie.width >= plant.x
+    );
+}
+
 
 window.addEventListener('resize', function(){
     canvasPosition = canvas.getBoundingClientRect();
