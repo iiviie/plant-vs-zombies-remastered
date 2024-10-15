@@ -24,7 +24,7 @@ let gameWon=false;
 let score = 0;
 let currentlevel = 1;
 
-const gameTime = 2 * 60 * 1000;
+const gameTime = 20 * 1000;
 let startTime;
 let finalWaveStarted = false;
 let finalWaveMessageTimer = 0;
@@ -569,7 +569,7 @@ const replayButton = {
 
 //for level increase
 const playButton = {
-    x: canvas.width / 2 - 100,
+    x: canvas.width / 2 - 150,
     y: canvas.height / 2 + 60,
     width: 300,
     height: 50,
@@ -588,7 +588,8 @@ function resetGame() {
     frame = 0;
     startTime = Date.now(); 
     finalWaveStarted = false;
-    zombiesInterval = Math.max(100, zombiesInterval - (currentlevel-1) * 100);; 
+    zombiesInterval = Math.max(100, zombiesInterval - (currentlevel-1) * 100);
+    timeIsUp = false; 
     animate();
 }
 
@@ -646,10 +647,10 @@ canvas.addEventListener('click', function(e) {
     const mouseX = e.x - canvasPosition.left;
     const mouseY = e.y - canvasPosition.top;
 
-    if (gameOver && mouseX > replayButton.x && mouseY > replayButton.y && mouseX < replayButton.x + replayButton.width && mouseY < replayButton.y + replayButton.height) {
+    if (gameOver && !gameWon && mouseX > replayButton.x && mouseY > replayButton.y && mouseX < replayButton.x + replayButton.width && mouseY < replayButton.y + replayButton.height) {
         resetGame();  
     }
-    else if (gameOver  && mouseX > playButton.x && mouseY > playButton.y && mouseX < playButton.x + playButton.width && mouseY < playButton.y + playButton.height) {
+    else if (gameOver && gameWon && mouseX > playButton.x && mouseY > playButton.y && mouseX < playButton.x + playButton.width && mouseY < playButton.y + playButton.height) {
         resetGame(); 
     }
 });
@@ -686,7 +687,9 @@ function handleGameStatus(){
 
 if(gameOver) {
     if (gameWon){
-        drawGameOverOverlay();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        currentlevel++;
+        drawLevelUpOverlay();
     }else{
         drawGameOverOverlay();
     }
@@ -696,13 +699,11 @@ if(gameOver) {
 
 function animate(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (!gameOver) {
         handleGameGrid();
         handlePlants();
         handleSuns();
         handlePeas();
         handleZombies();
-    }
     handleGameStatus();
     drawPlantSelectionMenu();
     frame++;
