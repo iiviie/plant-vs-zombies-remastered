@@ -3,7 +3,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = 900;
 canvas.height = 600;
 
-const backgroundMusic = new Audio('music/pvzMusic.mp3');
+const backgroundMusic = new Audio('assets/music/pvzMusic.mp3');
 backgroundMusic.loop = true;
 
 function startBackgroundMusic() {
@@ -20,6 +20,7 @@ const sunValue = 50;
 let zombiesInterval = 600;
 let frame = 0;
 let gameOver = false;
+let gameWon=false;
 let score = 0;
 let currentlevel = 1;
 
@@ -27,6 +28,7 @@ const gameTime = 2 * 60 * 1000;
 let startTime;
 let finalWaveStarted = false;
 let finalWaveMessageTimer = 0;
+let timeIsUp = false;
 
 
 const gameGrid = [];
@@ -38,10 +40,10 @@ const suns = [];
 
 // plant selection
 const plantTypes = [
-    { name: 'Peashooter', cost: 100, imageSrc: 'p-images/peashooter.webp' },
-    { name: 'Sunflower', cost: 50, imageSrc: 'p-images/sunflower.png' },
-    { name: 'wall_nut', cost: 50, imageSrc: 'p-images/wall_nut.png' },
-    { name: 'chilly', cost: 150, imageSrc: 'p-images/chilly-fire.png' },
+    { name: 'Peashooter', cost: 100, imageSrc: 'assets/p-images/peashooter.webp' },
+    { name: 'Sunflower', cost: 50, imageSrc: 'assets/p-images/sunflower.png' },
+    { name: 'wall_nut', cost: 50, imageSrc: 'assets/p-images/wall_nut.png' },
+    { name: 'chilly', cost: 150, imageSrc: 'assets/p-images/chilly-fire.png' },
 ];
 
 for (let i = 0; i < plantTypes.length; i++) {
@@ -108,6 +110,47 @@ function handleGameGrid(){
     }
 }
 
+// Sprite animation class
+class SpriteAnimation {
+    constructor(imageSrc, frameWidth, frameHeight, framesPerRow, totalFrames) {
+        this.image = new Image();
+        this.image.src = imageSrc;
+        this.frameWidth = frameWidth;
+        this.frameHeight = frameHeight;
+        this.framesPerRow = framesPerRow;
+        this.totalFrames = totalFrames;
+        
+        this.currentFrame = 0;
+        this.elapsedTime = 0;
+        this.frameRate = 1000 /24 ; // 12 fps by default
+    }
+
+    update(deltaTime) {
+        this.elapsedTime += deltaTime;
+        if (this.elapsedTime > this.frameRate) {
+            this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
+            this.elapsedTime = 0;
+        }
+    }
+
+    draw(ctx, x, y, width, height) {
+        const row = Math.floor(this.currentFrame / this.framesPerRow);
+        const col = this.currentFrame % this.framesPerRow;
+
+        ctx.drawImage(
+            this.image,
+            col * this.frameWidth,
+            row * this.frameHeight,
+            this.frameWidth,
+            this.frameHeight,
+            x,
+            y,
+            width,
+            height
+        );
+    }
+}
+
 // plants
 
 //TODO: add animated sprites for plants
@@ -127,16 +170,16 @@ class Plant {
 //images of plant
 
 const peashooterImage = new Image();
-peashooterImage.src = 'p-images/peashooter.webp';
+peashooterImage.src = 'assets/p-images/peashooter.webp';
 
 const sunflowerImage = new Image();
-sunflowerImage.src = 'p-images/sunflower.png';
+sunflowerImage.src = 'assets/p-images/sunflower.png';
 
 const chillyImage = new Image();
-chillyImage.src = 'p-images/chilly-fire.png';
+chillyImage.src = 'assets/p-images/chilly-fire.png';
 
 const wallImage = new Image();
-wallImage.src = 'p-images/wall_nut.png';
+wallImage.src = 'assets/p-images/wall_nut.png';
 
 
 //peashooter
@@ -201,7 +244,7 @@ class wall_nut extends Plant {
     constructor(x, y){
         super(x, y);
         this.cost = 50;
-        this.health= 2000;
+        this.health= 700;
     }
     draw(){
         ctx.drawImage(wallImage, this.x, this.y, this.width, this.height);
@@ -227,141 +270,157 @@ function handlePlants(){
                 plants[i].shooting = false;
             }
         }
-        for (let j = 0; j < zombies.length; j++){
-            if (plants[i] && collision(plants[i], zombies[j])){
-                zombies[j].movement = 0;
-                plants[i].health -= 0.5;
-            }
-            if (plants[i] && plants[i].health <= 0){
-                plants.splice(i, 1);
-                i--;
-                zombies[j].movement = zombies[j].speed;
-            }
-        }
     }
 }
 
 // zombies
 
 //TODO: add zombie types
-//FIXME: thee zombies stop moving when they react with a plant
 class Zombie {
     constructor(verticalPosition){
         this.x = canvas.width;
         this.y = verticalPosition;
         this.width = cellSize - cellGap * 2;
         this.height = cellSize - cellGap * 2;
-        this.speed = 0.44;
+        this.speed = 0.2;
         this.movement = this.speed;
         this.health = 100;
         this.maxHealth = this.health;
-        this.damage = 5; 
+        this.damage = 5;
+        this.eating = false;
+        this.spriteAnimation = null;
         
     }
-    update(){
+    update(deltaTime){
         this.x -= this.movement;
+        if (this.spriteAnimation) {
+            this.spriteAnimation.update(deltaTime);
+        }
+    }
+
+    draw(ctx){
+        if (this.spriteAnimation) {
+            this.spriteAnimation.draw(ctx, this.x, this.y, this.width, this.height);
+        }
     }
    
 }
 
-//zombies images
-const nzombieImage = new Image();
-nzombieImage.src = 'z-images/Zombie.png';
-
-const cone_zombieImage = new Image();
-cone_zombieImage.src = 'z-images/conehead_zombie.png';
-
-const bucket_zombieImage = new Image();
-bucket_zombieImage.src = 'z-images/buckethead_zombie.png';
-
 //normal zombie
 class nzombie extends Zombie {
-    constructor(x, y){
-        super(x, y);
-        this.level =1;
-    }
-    draw(){
-        ctx.drawImage(nzombieImage, this.x, this.y, this.width, this.height);
+    constructor(verticalPosition){
+        super(verticalPosition);
+        this.level = 1;
+        this.spriteAnimation = new SpriteAnimation('assets/z-images/normalZspritesheet.png', 166, 144, 6, 47); // Adjust these values based on your sprite sheet
     }
     
 }
 
 //cone head zombie
 class cone_zombie extends Zombie {
-    constructor(x, y){
-        super(x, y);
-        this.level =2;
+    constructor(verticalPosition){
+        super(verticalPosition);
+        this.level = 2;
         this.health = 150;
         this.maxHealth = this.health;
-    }
-    draw(){
-        ctx.drawImage(cone_zombieImage, this.x, this.y, this.width, this.height);
+        this.spriteAnimation = new SpriteAnimation('assets/z-images/coneZspritesheet.png', 166, 144, 4, 15); // Adjust these values based on your sprite sheet
     }
     
 }
 
 //buckethead zombie
 class bucket_zombie extends Zombie {
-    constructor(x, y){
-        super(x, y);
-        this.level =3;
+    constructor(verticalPosition){
+        super(verticalPosition);
+        this.level = 3;
         this.health = 200;
         this.maxHealth = this.health;
-    }
-    draw(){
-        ctx.drawImage(bucket_zombieImage, this.x, this.y, this.width, this.height);
+        this.spriteAnimation = new SpriteAnimation('assets/z-images/spritesheet.png', 166, 144, 6, 47); // Adjust these values based on your sprite sheet
     }
     
 }
 
 
 function handleZombies(){
-  const currentTime = Date.now() - startTime;
-  const finalWaveTime = 90 * 1000; // 1 minute 30 seconds
+    const currentTime = Date.now() - startTime;
+    const finalWaveTime = 90 * 1000; // 1 minute 30 seconds
 
-  if (currentTime >= finalWaveTime && !finalWaveStarted) {
-      finalWaveStarted = true;
-      zombiesInterval = 200; // Increase spawn rate for final wave
-      finalWaveMessageTimer = 180; // Show message for 3 seconds (60 frames per second)
-  }
+    if (currentTime >= finalWaveTime && !finalWaveStarted) {
+        finalWaveStarted = true;
+        zombiesInterval = 200;
+        finalWaveMessageTimer = 180; 
+    }
 
-  for (let i = 0; i < zombies.length; i++){
-      zombies[i].update();
-      zombies[i].draw();
-      if (zombies[i].x < 0){
-          gameOver = true;
-      }
-      if (zombies[i].health <= 0){
-          let gainedSuns = zombies[i].maxHealth / 10;
-          sunEnergy += gainedSuns;
-          score += gainedSuns;
-          const findThisIndex = zombiePositions.indexOf(zombies[i].y);
-          zombiePositions.splice(findThisIndex, 1);
-          zombies.splice(i, 1);
-          i--;
-      }
-  }
+    for (let i = 0; i < zombies.length; i++){
+        zombies[i].update(16);
+        zombies[i].draw(ctx);
 
-  if (frame % zombiesInterval === 0){
-      let verticalPosition = Math.floor(Math.random() * 5 + 1) * cellSize + cellGap;
+        let collidingWithPlant = false;
 
-  // Randomly choose to spawn zombies
-  //FIXME: reduce the probability of the bucket zombies
-  let zombieType = Math.random();
-  if (zombieType < 0.5) {  
-      zombies.push(new nzombie(verticalPosition));
-  } 
-  else if(zombieType<0.8 && zombieType>=0.5) {  
-      zombies.push(new cone_zombie(verticalPosition));
-  }
-  else {  
-    zombies.push(new bucket_zombie(verticalPosition));
-}
+        for (let j = 0; j < plants.length; j++) {
+            if (plantZombieCollision(plants[j], zombies[i])) {
+                collidingWithPlant = true;
+                zombies[i].eating = true;
+                zombies[i].movement = 0;
+                plants[j].health -= zombies[i].damage / 60;
+
+                if (plants[j].health <= 0) {
+                    plants.splice(j, 1);
+                    j--;
+                    zombies[i].eating = false;
+                    zombies[i].movement = zombies[i].speed;
+                }
+                break;
+            }
+        }
+
+        if (!collidingWithPlant && zombies[i].eating) {
+            zombies[i].eating = false;
+            zombies[i].movement = zombies[i].speed;
+        }
+
+        if (zombies[i].x < 0){
+            gameOver = true;
+        }
+        if (zombies[i].health <= 0){
+            let gainedSuns = zombies[i].maxHealth / 10;
+            sunEnergy += gainedSuns;
+            score += gainedSuns;
+            const findThisIndex = zombiePositions.indexOf(zombies[i].y);
+            zombiePositions.splice(findThisIndex, 1);
+            zombies.splice(i, 1);
+            i--;
+        }
+    }
+
+    if (!timeIsUp && frame % zombiesInterval === 0){
+        let verticalPosition = Math.floor(Math.random() * 5 + 1) * cellSize + cellGap;
+
+        // Randomly choose to spawn zombies
+        let zombieType = Math.random();
+        if (zombieType < 0.5) {  
+            zombies.push(new nzombie(verticalPosition));
+        } 
+        else if(zombieType < 0.8 && zombieType >= 0.5) {  
+            zombies.push(new cone_zombie(verticalPosition));
+        }
+        else {  
+            zombies.push(new bucket_zombie(verticalPosition));
+        }
         
         zombiePositions.push(verticalPosition);
+    }
 
-      }
+    if (timeIsUp) {
+    setInterval=6000000;
 }
+        if(timeIsUp && zombies.length==0){gameWon = true;
+        gameOver = true;{
+
+        }
+    }
+}
+
 
 // peas
 class Pea {
@@ -406,7 +465,7 @@ function handlePeas(){
 // suns
 //FIXME:the suns currletly fall from the top of the screen and do not stay on the lawn/field
 const sunImage = new Image();
-sunImage.src = 'p-images/Sun.gif';
+sunImage.src = 'assets/p-images/Sun.gif';
 
 //fixed the issue of sunds fall off the screen , now they stopa at the bottom of the screen
 class Sun {
@@ -418,12 +477,16 @@ class Sun {
         this.amount = sunValue;
         this.speed = Math.random() * 0.5 + 0.25;
         this.bottomY = canvas.height - this.height;
+        this.bottomHitTime = null;
     }
     update(){
       if (this.y < this.bottomY) {
         this.y += this.speed;
     } else {
-        this.y = this.bottomY; // Ensure sun stops exactly at the bottom
+        this.y = this.bottomY;   // Ensure trhatsun stops exactly at the bottom
+        if(this.bottomHitTime === null) {
+        this.bottomHitTime = Date.now();
+        }
     }
     }
     draw(){
@@ -440,6 +503,9 @@ function handleSuns(){
         suns[i].draw();
         if (suns[i] && mouse.x && mouse.y && collision(suns[i], mouse)){
             sunEnergy += suns[i].amount;
+            suns.splice(i, 1);
+            i--;
+        } else if (suns[i].bottomHitTime && Date.now() - suns[i].bottomHitTime > 3000){
             suns.splice(i, 1);
             i--;
         }
@@ -510,7 +576,7 @@ const replayButton = {
 
 //for level increase
 const playButton = {
-    x: canvas.width / 2 - 100,
+    x: canvas.width / 2 - 150,
     y: canvas.height / 2 + 60,
     width: 300,
     height: 50,
@@ -518,6 +584,7 @@ const playButton = {
 
 function resetGame() {
     gameOver = false;
+    gameWon = false;
     score = 0;
     sunEnergy = 300;
     zombies.length = 0;  
@@ -528,7 +595,8 @@ function resetGame() {
     frame = 0;
     startTime = Date.now(); 
     finalWaveStarted = false;
-    zombiesInterval = Math.max(100, zombiesInterval - (currentlevel-1) * 100);; 
+    zombiesInterval = Math.max(100, zombiesInterval - (currentlevel-1) * 100);
+    timeIsUp = false; 
     animate();
 }
 
@@ -586,10 +654,10 @@ canvas.addEventListener('click', function(e) {
     const mouseX = e.x - canvasPosition.left;
     const mouseY = e.y - canvasPosition.top;
 
-    if (gameOver && mouseX > replayButton.x && mouseY > replayButton.y && mouseX < replayButton.x + replayButton.width && mouseY < replayButton.y + replayButton.height) {
+    if (gameOver && !gameWon && mouseX > replayButton.x && mouseY > replayButton.y && mouseX < replayButton.x + replayButton.width && mouseY < replayButton.y + replayButton.height) {
         resetGame();  
     }
-    else if (gameOver  && mouseX > playButton.x && mouseY > playButton.y && mouseX < playButton.x + playButton.width && mouseY < playButton.y + playButton.height) {
+    else if (gameOver && gameWon && mouseX > playButton.x && mouseY > playButton.y && mouseX < playButton.x + playButton.width && mouseY < playButton.y + playButton.height) {
         resetGame(); 
     }
 });
@@ -619,26 +687,30 @@ function handleGameStatus(){
       finalWaveMessageTimer--;
   }
 
-if(gameOver) {
-    drawGameOverOverlay();
+  
+  if (currentTime >= gameTime && !timeIsUp) {
+    timeIsUp = true;
 }
-    if (currentTime >= gameTime && !gameOver){
-     currentlevel++;
-      gameOver = true;
-      drawLevelUpOverlay();
-  }
 
+if(gameOver) {
+    if (gameWon){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        currentlevel++;
+        drawLevelUpOverlay();
+    }else{
+        drawGameOverOverlay();
+    }
+}
+   
  }
 
 function animate(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (!gameOver) {
         handleGameGrid();
         handlePlants();
         handleSuns();
         handlePeas();
         handleZombies();
-    }
     handleGameStatus();
     drawPlantSelectionMenu();
     frame++;
@@ -657,6 +729,16 @@ function collision(first, second){
         return true;
     };
 };
+
+function plantZombieCollision(plant, zombie) {
+    const collisionThreshold = 0; // Collision up to 50px on the right of the cell
+    return (
+        plant.y === zombie.y &&
+        zombie.x <= plant.x + plant.width + collisionThreshold &&
+        zombie.x + zombie.width >= plant.x
+    );
+}
+
 
 window.addEventListener('resize', function(){
     canvasPosition = canvas.getBoundingClientRect();
