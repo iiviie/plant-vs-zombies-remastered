@@ -108,6 +108,47 @@ function handleGameGrid(){
     }
 }
 
+// Sprite animation class
+class SpriteAnimation {
+    constructor(imageSrc, frameWidth, frameHeight, framesPerRow, totalFrames) {
+        this.image = new Image();
+        this.image.src = imageSrc;
+        this.frameWidth = frameWidth;
+        this.frameHeight = frameHeight;
+        this.framesPerRow = framesPerRow;
+        this.totalFrames = totalFrames;
+        
+        this.currentFrame = 0;
+        this.elapsedTime = 0;
+        this.frameRate = 1000 /24 ; // 12 fps by default
+    }
+
+    update(deltaTime) {
+        this.elapsedTime += deltaTime;
+        if (this.elapsedTime > this.frameRate) {
+            this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
+            this.elapsedTime = 0;
+        }
+    }
+
+    draw(ctx, x, y, width, height) {
+        const row = Math.floor(this.currentFrame / this.framesPerRow);
+        const col = this.currentFrame % this.framesPerRow;
+
+        ctx.drawImage(
+            this.image,
+            col * this.frameWidth,
+            row * this.frameHeight,
+            this.frameWidth,
+            this.frameHeight,
+            x,
+            y,
+            width,
+            height
+        );
+    }
+}
+
 // plants
 
 //TODO: add animated sprites for plants
@@ -233,7 +274,6 @@ function handlePlants(){
 // zombies
 
 //TODO: add zombie types
-//FIXME: thee zombies stop moving when they react with a plant
 class Zombie {
     constructor(verticalPosition){
         this.x = canvas.width;
@@ -246,60 +286,54 @@ class Zombie {
         this.maxHealth = this.health;
         this.damage = 5;
         this.eating = false;
+        this.spriteAnimation = null;
         
     }
-    update(){
+    update(deltaTime){
         this.x -= this.movement;
+        if (this.spriteAnimation) {
+            this.spriteAnimation.update(deltaTime);
+        }
+    }
+
+    draw(ctx){
+        if (this.spriteAnimation) {
+            this.spriteAnimation.draw(ctx, this.x, this.y, this.width, this.height);
+        }
     }
    
 }
 
-//zombies images
-const nzombieImage = new Image();
-nzombieImage.src = 'assets/z-images/Zombie.png';
-
-const cone_zombieImage = new Image();
-cone_zombieImage.src = 'assets/z-images/conehead_zombie.png';
-
-const bucket_zombieImage = new Image();
-bucket_zombieImage.src = 'assets/z-images/buckethead_zombie.png';
-
 //normal zombie
 class nzombie extends Zombie {
-    constructor(x, y){
-        super(x, y);
-        this.level =1;
-    }
-    draw(){
-        ctx.drawImage(nzombieImage, this.x, this.y, this.width, this.height);
+    constructor(verticalPosition){
+        super(verticalPosition);
+        this.level = 1;
+        this.spriteAnimation = new SpriteAnimation('assets/z-images/normalZspritesheet.png', 166, 144, 6, 47); // Adjust these values based on your sprite sheet
     }
     
 }
 
 //cone head zombie
 class cone_zombie extends Zombie {
-    constructor(x, y){
-        super(x, y);
-        this.level =2;
+    constructor(verticalPosition){
+        super(verticalPosition);
+        this.level = 2;
         this.health = 150;
         this.maxHealth = this.health;
-    }
-    draw(){
-        ctx.drawImage(cone_zombieImage, this.x, this.y, this.width, this.height);
+        this.spriteAnimation = new SpriteAnimation('assets/z-images/coneZspritesheet.png', 166, 144, 4, 15); // Adjust these values based on your sprite sheet
     }
     
 }
 
 //buckethead zombie
 class bucket_zombie extends Zombie {
-    constructor(x, y){
-        super(x, y);
-        this.level =3;
+    constructor(verticalPosition){
+        super(verticalPosition);
+        this.level = 3;
         this.health = 200;
         this.maxHealth = this.health;
-    }
-    draw(){
-        ctx.drawImage(bucket_zombieImage, this.x, this.y, this.width, this.height);
+        this.spriteAnimation = new SpriteAnimation('assets/z-images/spritesheet.png', 166, 144, 6, 47); // Adjust these values based on your sprite sheet
     }
     
 }
@@ -316,8 +350,8 @@ function handleZombies(){
     }
 
     for (let i = 0; i < zombies.length; i++){
-        zombies[i].update();
-        zombies[i].draw();
+        zombies[i].update(16);
+        zombies[i].draw(ctx);
 
         let collidingWithPlant = false;
 
