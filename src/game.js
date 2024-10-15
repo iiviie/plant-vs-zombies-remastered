@@ -20,6 +20,7 @@ const sunValue = 50;
 let zombiesInterval = 600;
 let frame = 0;
 let gameOver = false;
+let gameWon=false;
 let score = 0;
 let currentlevel = 1;
 
@@ -27,6 +28,7 @@ const gameTime = 2 * 60 * 1000;
 let startTime;
 let finalWaveStarted = false;
 let finalWaveMessageTimer = 0;
+let timeIsUp = false;
 
 
 const gameGrid = [];
@@ -357,7 +359,7 @@ function handleZombies(){
         }
     }
 
-    if (frame % zombiesInterval === 0){
+    if (!timeIsUp && frame % zombiesInterval === 0){
         let verticalPosition = Math.floor(Math.random() * 5 + 1) * cellSize + cellGap;
 
         // Randomly choose to spawn zombies
@@ -373,6 +375,15 @@ function handleZombies(){
         }
         
         zombiePositions.push(verticalPosition);
+    }
+
+    if (timeIsUp) {
+    setInterval=6000000;
+}
+        if(timeIsUp && zombies.length==0){gameWon = true;
+        gameOver = true;{
+
+        }
     }
 }
 
@@ -532,6 +543,7 @@ const playButton = {
 
 function resetGame() {
     gameOver = false;
+    gameWon = false;
     score = 0;
     sunEnergy = 300;
     zombies.length = 0;  
@@ -633,15 +645,19 @@ function handleGameStatus(){
       finalWaveMessageTimer--;
   }
 
-if(gameOver) {
-    drawGameOverOverlay();
+  
+  if (currentTime >= gameTime && !timeIsUp) {
+    timeIsUp = true;
 }
-    if (currentTime >= gameTime && !gameOver){
-     currentlevel++;
-      gameOver = true;
-      drawLevelUpOverlay();
-  }
 
+if(gameOver) {
+    if (gameWon){
+        drawGameOverOverlay();
+    }else{
+        drawGameOverOverlay();
+    }
+}
+   
  }
 
 function animate(){
