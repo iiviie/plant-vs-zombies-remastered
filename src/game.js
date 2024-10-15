@@ -24,7 +24,7 @@ let gameWon=false;
 let score = 0;
 let currentlevel = 1;
 
-const gameTime = 20 * 1000;
+const gameTime = 2 * 60 * 1000;
 let startTime;
 let finalWaveStarted = false;
 let finalWaveMessageTimer = 0;
