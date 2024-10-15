@@ -5,7 +5,7 @@ body{
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-image: url('p-images/home-page.jpg');
+    background-image: url('assets/p-images/home-page.jpg');
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center;
@@ -15,7 +15,7 @@ body{
     width: 104%;
     height: 100vh;
     display: flex;
-    background-image: url('p-images/loading_page.jpg');
+    background-image: url('assets/p-images/loading_page.jpg');
     background-repeat: no-repeat;
     background-size: cover;
     padding: 0px;

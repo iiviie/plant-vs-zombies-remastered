@@ -3,7 +3,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = 900;
 canvas.height = 600;
 
-const backgroundMusic = new Audio('music/pvzMusic.mp3');
+const backgroundMusic = new Audio('assets/music/pvzMusic.mp3');
 backgroundMusic.loop = true;
 
 function startBackgroundMusic() {
@@ -38,10 +38,10 @@ const suns = [];
 
 // plant selection
 const plantTypes = [
-    { name: 'Peashooter', cost: 100, imageSrc: 'p-images/peashooter.webp' },
-    { name: 'Sunflower', cost: 50, imageSrc: 'p-images/sunflower.png' },
-    { name: 'wall_nut', cost: 50, imageSrc: 'p-images/wall_nut.png' },
-    { name: 'chilly', cost: 150, imageSrc: 'p-images/chilly-fire.png' },
+    { name: 'Peashooter', cost: 100, imageSrc: 'assets/p-images/peashooter.webp' },
+    { name: 'Sunflower', cost: 50, imageSrc: 'assets/p-images/sunflower.png' },
+    { name: 'wall_nut', cost: 50, imageSrc: 'assets/p-images/wall_nut.png' },
+    { name: 'chilly', cost: 150, imageSrc: 'assets/p-images/chilly-fire.png' },
 ];
 
 for (let i = 0; i < plantTypes.length; i++) {
@@ -127,16 +127,16 @@ class Plant {
 //images of plant
 
 const peashooterImage = new Image();
-peashooterImage.src = 'p-images/peashooter.webp';
+peashooterImage.src = 'assets/p-images/peashooter.webp';
 
 const sunflowerImage = new Image();
-sunflowerImage.src = 'p-images/sunflower.png';
+sunflowerImage.src = 'assets/p-images/sunflower.png';
 
 const chillyImage = new Image();
-chillyImage.src = 'p-images/chilly-fire.png';
+chillyImage.src = 'assets/p-images/chilly-fire.png';
 
 const wallImage = new Image();
-wallImage.src = 'p-images/wall_nut.png';
+wallImage.src = 'assets/p-images/wall_nut.png';
 
 
 //peashooter
@@ -201,7 +201,7 @@ class wall_nut extends Plant {
     constructor(x, y){
         super(x, y);
         this.cost = 50;
-        this.health= 2000;
+        this.health= 700;
     }
     draw(){
         ctx.drawImage(wallImage, this.x, this.y, this.width, this.height);
@@ -256,13 +256,13 @@ class Zombie {
 
 //zombies images
 const nzombieImage = new Image();
-nzombieImage.src = 'z-images/Zombie.png';
+nzombieImage.src = 'assets/z-images/Zombie.png';
 
 const cone_zombieImage = new Image();
-cone_zombieImage.src = 'z-images/conehead_zombie.png';
+cone_zombieImage.src = 'assets/z-images/conehead_zombie.png';
 
 const bucket_zombieImage = new Image();
-bucket_zombieImage.src = 'z-images/buckethead_zombie.png';
+bucket_zombieImage.src = 'assets/z-images/buckethead_zombie.png';
 
 //normal zombie
 class nzombie extends Zombie {
@@ -311,8 +311,8 @@ function handleZombies(){
 
     if (currentTime >= finalWaveTime && !finalWaveStarted) {
         finalWaveStarted = true;
-        zombiesInterval = 200; // Increase spawn rate for final wave
-        finalWaveMessageTimer = 180; // Show message for 3 seconds (60 frames per second)
+        zombiesInterval = 200;
+        finalWaveMessageTimer = 180; 
     }
 
     for (let i = 0; i < zombies.length; i++){
@@ -326,7 +326,7 @@ function handleZombies(){
                 collidingWithPlant = true;
                 zombies[i].eating = true;
                 zombies[i].movement = 0;
-                plants[j].health -= zombies[i].damage / 60; // Assuming 60 FPS, adjust damage per frame
+                plants[j].health -= zombies[i].damage / 60;
 
                 if (plants[j].health <= 0) {
                     plants.splice(j, 1);
@@ -420,7 +420,7 @@ function handlePeas(){
 // suns
 //FIXME:the suns currletly fall from the top of the screen and do not stay on the lawn/field
 const sunImage = new Image();
-sunImage.src = 'p-images/Sun.gif';
+sunImage.src = 'assets/p-images/Sun.gif';
 
 //fixed the issue of sunds fall off the screen , now they stopa at the bottom of the screen
 class Sun {
@@ -437,7 +437,7 @@ class Sun {
       if (this.y < this.bottomY) {
         this.y += this.speed;
     } else {
-        this.y = this.bottomY; // Ensure sun stops exactly at the bottom
+        this.y = this.bottomY; // Ensure trhatsun stops exactly at the bottom
     }
     }
     draw(){
@@ -467,7 +467,7 @@ function drawPlantSelectionMenu() {
     ctx.fillRect(0, 0, cellSize, canvas.height);
     
     for (let i = 0; i < plantTypes.length; i++) {
-        ctx.fillStyle = i === selectedPlant ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 255, 255, 1)';
+        ctx.fillStyle = i === selectedPlant ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)';
         ctx.fillRect(0, cellSize * (i + 1), cellSize, cellSize/2);
         
         const img = plantTypes[i].image;
